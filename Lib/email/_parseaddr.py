@@ -348,6 +348,32 @@ class AddrlistClass:
 
         return adlist
 
+    def isatomend(self, atomends=None):
+        # Security Issue mentionned in #34155
+        atomends = atomends or self.atomends
+
+        if self.field[self.pos] not in atomends:
+            return False
+
+        if self.field[self.pos] != '@':
+            return True
+
+        pos = self.pos + 1
+        while pos < len(self.field):
+            if self.field[pos] == '@':
+                # We have found another @ in before the next atomend:
+                # do not count the @ in self.pos as atomend.
+                return False
+            elif self.field[pos] in atomends and self.field[pos] != '.':
+                # We have found another atomend than @ and .:
+                # Count the at in self.pos as atomend
+                return True
+            pos += 1
+
+        # We have not found any other atomend further:
+        # Count the current atomend as valid atomend
+        return True
+
     def getaddrspec(self):
         """Parse an RFC 2822 addr-spec."""
         aslist = []
@@ -363,7 +389,7 @@ class AddrlistClass:
                 preserve_ws = False
             elif self.field[self.pos] == '"':
                 aslist.append('"%s"' % quote(self.getquote()))
-            elif self.field[self.pos] in self.atomends:
+            elif self.isatomend():
                 if aslist and not aslist[-1].strip():
                     aslist.pop()
                 break
@@ -394,7 +420,7 @@ class AddrlistClass:
             elif self.field[self.pos] == '.':
                 self.pos += 1
                 sdlist.append('.')
-            elif self.field[self.pos] in self.atomends:
+            elif self.isatomend():
                 break
             else:
                 sdlist.append(self.getatom())
@@ -457,11 +483,9 @@ class AddrlistClass:
         getphraselist() since phrase endings must not include the `.' (which
         is legal in phrases)."""
         atomlist = ['']
-        if atomends is None:
-            atomends = self.atomends
 
         while self.pos < len(self.field):
-            if self.field[self.pos] in atomends:
+            if self.isatomend(atomends):
                 break
             else:
                 atomlist.append(self.field[self.pos])

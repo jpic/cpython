@@ -3141,6 +3141,12 @@ class TestMiscellaneous(TestEmailBase):
         self.assertEqual(('', 'merwok.wok.wok@xample.com'),
             utils.parseaddr('merwok. wok .  wok@xample.com'))
 
+    def test_parseaddr_uses_latest_at_for_domain(self):
+        self.assertEqual(('', 'wok@h4x0r@xample.com'),
+            utils.parseaddr('wok@h4x0r@xample.com'))
+        self.assertEqual(('', 'wok@h4x0r.com@xample.com'),
+            utils.parseaddr('wok@h4x0r.com@xample.com'))
+
     def test_formataddr_does_not_quote_parens_in_quoted_string(self):
         addr = ("'foo@example.com' (foo@example.com)",
                 'foo@example.com')
